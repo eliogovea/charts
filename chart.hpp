@@ -1,13 +1,15 @@
+#pragma once
+
 #include <UTFT.h>
 
-#include "reader.hpp"
+#include "signal.hpp"
 
 class chart {
 public:
     chart(UTFT& display);
     void draw_axis(int r, int g, int b);
-    void draw_signal(const buffer& data, int r, int g, int b);
-    void remove_signal(const buffer& data);
+    void draw_signal(const signal& data, int r, int g, int b);
+    void remove_signal(const signal& s);
 private:
     UTFT& display_;
     
@@ -45,8 +47,8 @@ void chart::draw_axis(int r, int g, int b) {
 }
 
 
-void chart::draw_signal(const buffer& data, int r, int g, int b) {
-    int size = data.size();
+void chart::draw_signal(const signal& s, int r, int g, int b) {
+    int size = s.get_buffer().size();
     if (size < 2) {
         return;
     }
@@ -56,19 +58,19 @@ void chart::draw_signal(const buffer& data, int r, int g, int b) {
         return flip(bottom_left_x_ + margin_, bottom_left_x_ + width_ - margin_, x);
     };
     auto get_y = [&](int y) {
-        return fit(0, 1 << 10, y, bottom_left_y_ + margin_, bottom_left_y_ + height_ - margin_);
+        return fit(s.get_reader().min_value(), s.get_reader().max_value(), y, bottom_left_y_ + margin_, bottom_left_y_ + height_ - margin_);
     };
     int last_x = get_x(0);
-    int last_y = get_y(data.at(0));
+    int last_y = get_y(s.get_buffer().at(0));
     for (int i = 1; i < size; i++) {
         int cur_x = get_x(i);
-        int cur_y = get_y(data.at(i));
+        int cur_y = get_y(s.get_buffer().at(i));
         display_.drawLine(last_x, last_y, cur_x, cur_y);
         last_x = cur_x;
         last_y = cur_y;
     }
 }
 
-void chart::remove_signal(const buffer& data) { // data did not change since the last draw_signal !!!
-    draw_signal(data, background_r, background_g, background_b);
+void chart::remove_signal(const signal& s) { // signal buffer did not change since the last draw_signal !!!
+    draw_signal(s, background_r, background_g, background_b);
 }
